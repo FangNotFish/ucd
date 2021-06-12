@@ -434,8 +434,9 @@ def _prepare():
         os.makedirs(DATA_DIR)
 
     if not os.path.exists(FN_UCD_ALL_FLAT_XML):
-
+        sys.stdout.write('download ucd all flat xml file from the internet')
         fn = wget.download(URL_UCD_ALL_FLAT_XML, out=FN_UCD_ALL_FLAT_ZIP)
+        sys.stdout.write('\r\n')
 
         with zipfile.ZipFile(fn, mode='r', allowZip64=True) as zipf:
             zipf.extract('ucd.all.flat.xml', DATA_DIR)
@@ -787,7 +788,28 @@ def echo_ucd_props_source(
     echo('}')
 
 
+def _prepare_args(args=None):
+    import argparse as ap
+
+    parser = ap.ArgumentParser()
+
+    parser.add_argument(
+        '--workpath',
+        '--pwd',
+        default=os.path.abspath('.'),
+    )
+
+    parser.add_argument(
+        '--name',
+        default='ucd_props',
+    )
+
+    return parser.parse_args(args)
+
+
 if __name__ == '__main__':
+    opt = _prepare_args()
+
     _prepare()
 
     ucd = _ucd()
@@ -802,10 +824,12 @@ if __name__ == '__main__':
     index1_t = get_inttype(*tuple(index1))[0]
     index2_t = get_inttype(*tuple(index2))[0]
 
-    h_fn = 'ucd_props.h'
-    c_fn = 'ucd_props.c'
+    h_fn = f'{opt.name}.h'
+    c_fn = f'{opt.name}.c'
+    abs_h_fn = os.path.join(opt.workpath, h_fn)
+    abs_c_fn = os.path.join(opt.workpath, c_fn)
 
-    with open(h_fn, 'w', encoding='utf-8') as fp:
+    with open(abs_h_fn, 'w', encoding='utf-8') as fp:
         echo_ucd_props_header(
             fp,
             ucd.version,
@@ -818,7 +842,7 @@ if __name__ == '__main__':
             shift,
         )
 
-    with open(c_fn, 'w', encoding='utf-8') as fp:
+    with open(abs_c_fn, 'w', encoding='utf-8') as fp:
         echo_ucd_props_source(
             fp,
             h_fn,
